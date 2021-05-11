@@ -147,6 +147,7 @@ void Robot::Regulor() {
 #define Kp 8710//9705 //220
 #define Ki 0.9 //15.1//6.9//1.3
 #define Kd 70//46843//2300
+//test
 
     int magic = 100; //100
 
