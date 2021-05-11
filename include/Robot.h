@@ -65,8 +65,8 @@ public:
         ideg_step = adeg_step;
         in_step = 360 / ideg_step;
         in_ustep = in_step * ainterpol;
-        iWRight = {"RSPEED", 0, 0, 2.5};
-        iWLeft = {"LSPEED", 0, 0, 2.5};
+        iWRight = {"RSPEED", 0, 0, 40};
+        iWLeft = {"LSPEED", 0, 0, 40};
 
         ros::init(argc, argv, "Auto_node");       // connects node with ros core
         auto node = ros::NodeHandle();                            // API for ros functionality
@@ -81,16 +81,19 @@ public:
         thread_zpracovavac = true;
         thread_regulace = true;
 
-        std::thread left(&Robot::RampGenerator,this,std::ref(iWLeft));
-        std::thread right(&Robot::RampGenerator,this,std::ref(iWRight));
+        //std::thread left(&Robot::RampGenerator,this,std::ref(iWLeft));
+        //std::thread right(&Robot::RampGenerator,this,std::ref(iWRight));
+        std::thread kola(&Robot::RampGenerator,this);
+
         //std::thread menu(&Robot::Realtime_control,this); // odkomentova, když chceš psát do konzole [LSPEED,RSPEED]
         std::thread information(&Robot::Info,this);
         std::thread zpracovac(&Robot::Message_proccesing,this);
         std::thread regulace(&Robot::Regulor,this);
 
         join_thread();
-        left.join();
-        right.join();
+        //left.join();
+        //right.join();
+        kola.join();
         information.join();
         zpracovac.join();
         regulace.join();
@@ -113,8 +116,8 @@ private:
       * \details Metoda která řídí jednotlivá kola robota pomocí generátoru rampy. Tato metoda funguje v samostatném vláknu.
       * \param[in] aWheel
    */
-    void RampGenerator(TWheel &aWheel);
-
+    //void RampGenerator(TWheel &aWheel);
+    void RampGenerator();
     /**\brief  Info
       * \details Metoda, která generuje za určitý čas příkazy pro získání hodnot senzorů z robota. Tato metoda funguje v samostatném vláknu.
    */

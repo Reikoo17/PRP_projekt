@@ -58,10 +58,10 @@ std::string UDPSocket::receive_message() const{
     char buffer[BUFFER];
     std::string ret_string;
 
-    int lol = recv(s_socket, buffer, sizeof(buffer), 0);
+    int no_byte = recv(s_socket, buffer, sizeof(buffer), 0);
 
     std::string str_buffer(buffer);
-
+    //std::cout << str_buffer << std::endl;
     if (!is_nmea_message_valid(str_buffer)) return "";
 
     ret_string = extract_nmea_message_content(str_buffer);
@@ -75,15 +75,16 @@ std::string UDPSocket::receive_message() const{
 void UDPSocket::sender() {
 
     while(thread_sender) {
+
         if (!queue_send.empty()) {
             queue_send_lock.lock();
             std::string message = queue_send.front();
             queue_send.pop();
             queue_send_lock.unlock();
+            //std::cout << "poslano: " << message << std::endl;
             if(send_message(message)==0) std::cout << "Zpráva nebyla poslána" << std::endl;
-
         }
-        sleep_for(15us);
+       sleep_for(10us);
     }
 }
 
@@ -92,10 +93,11 @@ void UDPSocket::receiver() {
         std::string message = receive_message();
         if (!message.empty()){
             queue_recv_lock.lock();
+            //std::cout << "přijato: " << message << std::endl;
             queue_recv.push(message);
             queue_recv_lock.unlock();
         }
-        sleep_for(15us);
+       sleep_for(10us);
     }
 }
 

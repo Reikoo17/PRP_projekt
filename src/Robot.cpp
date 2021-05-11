@@ -7,24 +7,55 @@
 using std::cout;
 
 
-void Robot::RampGenerator(TWheel &aWheel) {
+//void Robot::RampGenerator(TWheel &aWheel) {
+//    std::stringstream stream;
+//    while (thread_wheels) {
+//
+//            if ((aWheel.set_speed - aWheel.actual_speed) > 0) {
+//                aWheel.actual_speed += aWheel.acceleration;
+//            } else if ((aWheel.set_speed - aWheel.actual_speed) < 0){
+//                aWheel.actual_speed -= aWheel.acceleration;
+//            }
+//#ifdef DEBUG
+//            std::cout << aWheel.actual_speed << std::endl;
+//#endif
+//            stream << aWheel.command << "," << aWheel.actual_speed << std::flush;
+//            push_message(stream.str());
+//            stream.str("");
+//           // std::cout << "Chci poslat: " << aWheel.command << "," << aWheel.actual_speed << std::endl;
+//            sleep_for(500us);
+//
+//    }
+//}
 
+void Robot::RampGenerator() {
+    std::stringstream rstream, lstream;
     while (thread_wheels) {
-        std::stringstream stream;
-            if ((aWheel.set_speed - aWheel.actual_speed) > 0) {
-                aWheel.actual_speed += aWheel.acceleration;
-            } else if ((aWheel.set_speed - aWheel.actual_speed) < 0){
-                aWheel.actual_speed -= aWheel.acceleration;
-            }
+
+        if ((iWRight.set_speed - iWRight.actual_speed) > 0) {
+            iWRight.actual_speed += iWRight.acceleration;
+        } else if ((iWRight.set_speed - iWRight.actual_speed) < 0){
+            iWRight.actual_speed -= iWRight.acceleration;
+        }
+
+        if ((iWLeft.set_speed - iWLeft.actual_speed) > 0) {
+            iWLeft.actual_speed += iWLeft.acceleration;
+        } else if ((iWLeft.set_speed - iWLeft.actual_speed) < 0){
+            iWLeft.actual_speed -= iWLeft.acceleration;
+        }
 #ifdef DEBUG
-            std::cout << aWheel.actual_speed << std::endl;
+        std::cout << aWheel.actual_speed << std::endl;
 #endif
-            stream << aWheel.command << "," << aWheel.actual_speed << std::flush;
-            push_message(stream.str());
-            stream.str("");
-            sleep_for(1ms);
+        rstream << iWRight.command << "," << iWRight.actual_speed << std::flush;
+        lstream << iWLeft.command << "," << iWLeft.actual_speed << std::flush;
+        push_message(rstream.str());
+        push_message(lstream.str());
+        rstream.str("");
+        lstream.str("");
+        sleep_for(10ms);
     }
 }
+//TODO: udělat jednu funkci pro setnutí obou kol naráz
 void Robot::SetSpeed(Side aSide, float aSpeed) {
     if (aSide == 0){
         iWLeft.set_speed = aSpeed;
@@ -52,7 +83,7 @@ void Robot::Info(){
             stream.str("");
         }
         ros::spinOnce();
-        sleep_for(800us);
+        sleep_for(10ms);
        // ros::spinOnce();
     }
 
@@ -62,24 +93,48 @@ void Robot::Info(){
 void Robot::Message_proccesing() {
     std::regex rgx("(\\w*),(\\d+),?(\\d*.\\d*)?");
     std::smatch matches;
+    uint8_t zero_distancer = 0;
+    uint8_t zero_distancel = 0;
     while (thread_zpracovavac) {
-        if (!empty_box()) {
+        if(!empty_box()) {
             std::string message = get_message();
             if (std::regex_search(message, matches, rgx)) {
                 if (matches[1].str() == "LODO") {
-                    LODO += stoi(matches[2]);
-                } else if (matches[1].str() == "RODO") {
-                    RODO += stoi(matches[2]);
+                    int distance = stoi(matches[2]);
+
+                    if (distance == 0 && iWLeft.actual_speed > 500) {
+                        ++zero_distancel;
+                    } else {
+                        LODO += distance;
+                        zero_distancel=0;
+                    }
+                }
+                else if (matches[1].str() == "RODO") {
+                    int distance = stoi(matches[2]);
+                    if (distance == 0 && iWRight.actual_speed > 500) {
+                        ++zero_distancer;
+                    }
+                    else {
+                        RODO += distance;
+                        zero_distancer=0;
+                    }
                 } else if (matches[1].str() == "SENSOR") {
                     sensor[stoi(matches[2])] = std::stof(matches[3]);
                 }
             }
+            if ((zero_distancel > 10) || (zero_distancer > 10)){
+                iWRight.actual_speed=0;
+                iWLeft.actual_speed=0;
+                zero_distancer=0;
+                zero_distancel=0;
+            }
         }
-        sleep_for(10us);
+        //sleep_for(10us);
     }
 }
 
 void Robot::Regulor() {
+//TODO:Přidat do regulátoru funkci, že když kola se seknou a znovu začneme přidávat, tak aby regulátor počítal s tím, že jedeme zas od nuly a nedával nesmyslně velkou rychlost
 
     /*std::fstream file;
     std::fstream file1;
@@ -89,9 +144,11 @@ void Robot::Regulor() {
     file2.open("levy_motor_rovne.txt",std::ios::out);*/
 
     //regulator
-const int Kp = 220 ;//170
-const int Ki = 1.2 ;//0.01
-const int Kd = 2300 ;//100
+#define Kp 8710//9705 //220
+#define Ki 0.9 //15.1//6.9//1.3
+#define Kd 70//46843//2300
+
+    int magic = 100; //100
 
     int error = 0;
     int lasterror = 0;
@@ -107,27 +164,39 @@ const int Kd = 2300 ;//100
     int MAX1=0;
     int MIN2=100;
     int MAX2=0;
+    int MIN3=100;
+    int MAX3=0;
     int s1_hodnota = 0;
     int s0_hodnota = 0;
     int s2_hodnota = 0;
+    int s3_hodnota = 0;
 
     int turn = 50; //otočka
-    int offset = 6400; //výchozí rychlost motoru
+    int offset = 3200; //výchozí rychlost motoru
+    int offset_plus = 0;
     int PowerR = 0;
     int PowerL = 0;
     int PowerR_c = 0;
     int PowerL_c = 0;
+    int PowerR_Space[6] = {0,0,0,0,0,0};
+    int PowerL_Space[6] = {0,0,0,0,0,0};
+    int PowerR_SV[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    int PowerL_SV[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    int Error_SV[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    int PowerR_Save = 0;
+    int PowerL_Save = 0;
+    int i;
 
     bool flag_calib = 1;
     int calib_pocet = 0;
+    int rodo_prev = 0;
+    int lodo_prev = 0;
+    int error_prum = 0;
+    int power_prum = 0;
 
 
 
     while(thread_regulace) {
-        //cout << "Stav: "<< stav << std::endl
-        //        << "senzor 1: "<< sensor[0] << std::endl
-        //        << "senzor 2: "<< sensor[1] << std::endl
-        //        << "senzor 3: "<< sensor[2] << std::endl;
         //sensory
         if(flag_calib){
             if(MAX1<=sensor[1])
@@ -147,11 +216,17 @@ const int Kd = 2300 ;//100
 
             if(MIN2>=sensor[2])
                 MIN2=sensor[2];
+            if(MAX3<=sensor[3])
+                MAX3=sensor[3];
+
+            if(MIN3>=sensor[3])
+                MIN3=sensor[3];
         }
 
         s0_hodnota=(100-0)*((sensor[0]-MIN0)/(MAX0-MIN0));
         s1_hodnota=(100-0)*((sensor[1]-MIN1)/(MAX1-MIN1));
         s2_hodnota=(100-0)*((sensor[2]-MIN2)/(MAX2-MIN2));
+        s3_hodnota=(100-0)*((sensor[3]-MIN3)/(MAX3-MIN3));
 
         if (s0_hodnota < 4){
             s0_hodnota = 0;
@@ -167,40 +242,95 @@ const int Kd = 2300 ;//100
         //regulace
         error = offsetS - s1_hodnota;
         integral = integral + error;
-        derivate = error - s1_hodnota;
+        //derivate = error - s1_hodnota;
+        derivate = error - lasterror;
         turn = (Kp*error) + (Ki*integral) + (Kd*derivate);
-        turn = turn/130; //rychlost 400 dělono 1000 //rychlost 800 děleno 500 //1600 250 //3200 125
-        //cout << "SENSOR: " << s1_hodnota << "\n";
-        //cout << "TURN: " << turn << "\n";
+        turn = turn/magic; //rychlost 400 dělono 1000 //rychlost 800 děleno 500 //1600 250 //3200 125 //funkcni 70 na 3200
+
 
 
 
         switch (stav){
 
             case 0: //kalibrace senzorů
-                SetSpeed(Right, 2000);
-                SetSpeed(Left, -2000);
+                SetSpeed(Right, 1000);
+                SetSpeed(Left, -1000);
 
-                if (sensor[0]>3500){
+                if (sensor[0] > 3000){
+                    flag_calib = 1;
                     stav = 1;
                 }
                 break;
-            case 1:
-                //SetSpeed(Right, 1000);
-                //SetSpeed(Left, -1000);
 
-                if (calib_pocet > 2){ //180 1 270 2
-                    stav = 2;
+            case 2: //kalibrace senzorů
+                SetSpeed(Right, 1000);
+                SetSpeed(Left, -1000);
+
+                //cout << s1_hodnota << "\n";
+                //cout << sensor[2] << "\n";
+                if (sensor[0] > 3000){
+                    lodo_prev = LODO;
+                    stav = 4;
+                }
+                /*if ((RODO-rodo_prev)>1000){
+                    lodo_prev = LODO;
+                    stav = 1;
+                }*/
+                break;
+            case 1:
+                SetSpeed(Right, -1000);
+                SetSpeed(Left, 1000);
+
+                if (calib_pocet > 1){ //180 1 270 2
+                    stav = 3;
                 }
                 else {
-                    if (sensor[0]<1000){
+                    /*if ((LODO-lodo_prev)>1000){
+                        rodo_prev = RODO;
                         calib_pocet = calib_pocet + 1;
-                        stav = 0;
+                        stav = 2;
+                    }*/
+                    if (sensor[2] > 3000){
+                        rodo_prev = RODO;
+                        calib_pocet = calib_pocet + 1;
+                        stav = 5;
                     }
                 }
                 break;
 
-            case 2:
+            case 4: //kalibrace senzorů
+                SetSpeed(Right, 200);
+                SetSpeed(Left, -200);
+
+                //cout << s1_hodnota << "\n";
+                //cout << sensor[2] << "\n";
+                if (sensor[0] < 1500){
+                    lodo_prev = LODO;
+                    stav = 1;
+                }
+                /*if ((RODO-rodo_prev)>1000){
+                    lodo_prev = LODO;
+                    stav = 1;
+                }*/
+                break;
+
+            case 5:
+                SetSpeed(Right, -200);
+                SetSpeed(Left, 200);
+
+                /*if ((LODO-lodo_prev)>1000){
+                    rodo_prev = RODO;
+                    calib_pocet = calib_pocet + 1;
+                    stav = 2;
+                }*/
+                if (sensor[2] < 1500){
+                    rodo_prev = RODO;
+                    calib_pocet = calib_pocet + 1;
+                    stav = 2;
+                }
+                break;
+
+            case 3:
                 flag_calib = 0;
                 SetSpeed(Right, -200);
                 SetSpeed(Left, 200);
@@ -212,6 +342,7 @@ const int Kd = 2300 ;//100
                     integral = 0;
                     derivate = 0;
                     stav = 10;
+                    rodo_prev = RODO;
                 }
 
                 break;
@@ -223,36 +354,56 @@ const int Kd = 2300 ;//100
                 PowerL=offset+turn;
 
 
-                if ((s0_hodnota>80)&&(s2_hodnota>80)&&(error < 10)){
-                    cout << "CROSS" << "\n";
-                    stav=20;
-                }
-
-                if ((s0_hodnota>80)&&(error > 30)){
-                    cout << "MISSS0" << "\n";
-                    stav=30;
-                }
-
-                if ((s2_hodnota>80)&&(error > 30)){
-                    cout << "MISSS2" << "\n";
-                    stav=40;
-                }
-
-                /*file << turn << "\n";
-                file1 << PowerR<< "\n";
-                file2 << PowerL << "\n";
-
-
-                 if (RODO>45000){
-                     SetSpeed(Right, 0);
-                     SetSpeed(Left, 0);
-                     file.close();
-                     file1.close();
-                     file2.close();
-                     */
 
                 SetSpeed(Right, PowerR);
                 SetSpeed(Left, PowerL);
+
+                if((RODO-rodo_prev)>100){
+                    for (int j = 20; j > 1; --j) {
+                        PowerR_SV[j] = PowerR_SV[j-1];
+                        PowerL_SV[j] = PowerL_SV[j-1];
+                        Error_SV[j] = Error_SV[j-1];
+                    }
+                    PowerR_SV[1] = PowerR;
+                    PowerL_SV[1] = PowerL;
+                    Error_SV[1] = error;
+                    rodo_prev = RODO;
+                }
+                error_prum = Error_SV[1]-Error_SV[20];
+                power_prum = PowerR - PowerL;
+
+                if((error_prum<100)&&(error_prum>-100)&&(RODO>10000)){
+                    //cout << "error_prum: " << error_prum << "\n";
+
+                    if((error_prum<1)&&(error_prum>-1)&&(power_prum>-100)&&(power_prum<100))
+                    {
+                        cout << "ACC" << "\n";
+                        rodo_prev = RODO;
+                        stav = 60;
+                    }
+                    /*if((error_prum>15)||(error_prum<-15))
+                    {
+                        cout << "SLOW" << "\n";
+                        rodo_prev = RODO;
+                        stav = 70;
+                    }*/
+                }
+
+
+                if ((s0_hodnota>80)&&(s2_hodnota>80)&&(error < 10)){
+                    cout << "CROSS" << "\n";
+                    rodo_prev = RODO;
+                    stav=20;
+                }
+
+                if ((s0_hodnota<20)&&(s2_hodnota<20)&&(error>20)){
+                    cout << "SPACE" << "\n";
+                    rodo_prev = RODO;
+                    PowerR_Save = (PowerR_SV[20]+PowerR_SV[19]+PowerR_SV[18]+PowerR_SV[17]+PowerR_SV[16]+PowerR_SV[15]+PowerR_SV[14]+PowerR_SV[13]+PowerR_SV[12]+PowerR_SV[11])/10;
+                    PowerL_Save = (PowerR_SV[20]+PowerL_SV[19]+PowerL_SV[18]+PowerL_SV[17]+PowerL_SV[16]+PowerL_SV[15]+PowerL_SV[14]+PowerL_SV[13]+PowerL_SV[12]+PowerL_SV[11])/10;
+
+                    stav=50;
+                }
 
                 break;
 
@@ -262,55 +413,99 @@ const int Kd = 2300 ;//100
                 SetSpeed(Right, offset);
                 SetSpeed(Left, offset);
 
-                if ((s0_hodnota<20)&&(s2_hodnota<20)){
+                if((RODO-rodo_prev)>2000){
                     cout << "DONE" << "\n";
                     lasterror=0;
                     error=0;
+                    rodo_prev = RODO;
                     stav=10;
                 }
 
                 break;
 
-                //MISSS0
-            case 30:
+                //SPACE
+            case 50:
+                if(s0_hodnota>70)
+                {
+                    PowerR_Save = PowerR_Save - 10;
+                }
+                if(s2_hodnota>70)
+                {
+                    PowerL_Save = PowerL_Save - 10;
+                }
 
-
-                SetSpeed(Right, (PowerR-(offset/3))/3);
-                SetSpeed(Left, (PowerL+(offset/4))/3);
-
-                if ((s1_hodnota<(offsetS+3))&&(s1_hodnota>(offsetS-3))){
-                    cout << "DONE" << "\n";
+                SetSpeed(Left, PowerL_Save);
+                SetSpeed(Right, PowerR_Save);
+                if (((s0_hodnota>18)&&(s2_hodnota>18))&&(s1_hodnota>45)&&(s1_hodnota<55)){
                     lasterror=0;
                     error=0;
                     stav = 10;
-                }
-
-                break;
-
-                //MISSS0
-            case 40:
-
-
-                SetSpeed(Right, (PowerR+(offset/4))/3);
-                SetSpeed(Left, (PowerL-(offset/3))/3);
-
-                if ((s1_hodnota<(offsetS+3))&&(s1_hodnota>(offsetS-3))){
+                    rodo_prev = RODO;
                     cout << "DONE" << "\n";
-                    lasterror=0;
-                    error=0;
-                    stav = 10;
                 }
-
                 break;
 
+                //ACC
+            case 60:
+                //magic = 200;
+                if((RODO-rodo_prev)>50){
+                    offset_plus = offset_plus + 10;
+                    //cout << "offset_plus: " << offset_plus << "\n";
+                    rodo_prev=RODO;
+                }
 
+                if(offset_plus>1000)
+                {
+                    offset_plus = 1000;
+                }
 
+                SetSpeed(Right, (offset+offset_plus)-turn);
+                SetSpeed(Left, (offset+offset_plus)+turn);
 
+                if ((s0_hodnota>80)||(s2_hodnota>80)){
+                    cout << "DONE" << "\n";
+                    offset_plus = 0;
+                    rodo_prev = RODO;
+                    stav=10;
+                }
+                if ((s0_hodnota<20)&&(s2_hodnota<20)&&(error>20)){
+                    cout << "SPACE" << "\n";
+                    rodo_prev = RODO;
+                    PowerR_Save = (PowerR_SV[20]+PowerR_SV[19]+PowerR_SV[18]+PowerR_SV[17]+PowerR_SV[16]+PowerR_SV[15]+PowerR_SV[14]+PowerR_SV[13]+PowerR_SV[12]+PowerR_SV[11])/10;
+                    PowerL_Save = (PowerR_SV[20]+PowerL_SV[19]+PowerL_SV[18]+PowerL_SV[17]+PowerL_SV[16]+PowerL_SV[15]+PowerL_SV[14]+PowerL_SV[13]+PowerL_SV[12]+PowerL_SV[11])/10;
+
+                    stav=50;
+                }
+                break;
+
+            case 70:
+                //magic = 200;
+                if((RODO-rodo_prev)>10){
+                    offset_plus = offset_plus + 100;
+                    //cout << "offset_plus: " << offset_plus << "\n";
+                    rodo_prev=RODO;
+                }
+
+                if(offset_plus>3000)
+                {
+                    offset_plus = 3000;
+                }
+
+                SetSpeed(Right, (offset-offset_plus)-turn);
+                SetSpeed(Left, (offset-offset_plus)+turn);
+
+                /*if ((s0_hodnota>80)||(s2_hodnota>80)){
+                    cout << "DONE" << "\n";
+                    magic = 70;
+                    offset_plus = 0;
+                    rodo_prev = RODO;
+                    stav=10;
+                }*/
+                break;
         }
-
         lasterror = error;
 
 
-        sleep_for(125us);
+        sleep_for(10ms);
 
     }}
