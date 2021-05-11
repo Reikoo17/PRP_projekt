@@ -146,9 +146,10 @@ void Robot::Regulor() {
     file3.open("sensor2.txt",std::ios::out);
 
     //regulator
-#define Kp 8710//9705 //220
-#define Ki 0.9 //15.1//6.9//1.3
-#define Kd 70//46843//2300
+            //
+#define Kp 10000//8710//9705 //220
+#define Ki 1.2//0.9
+#define Kd 80//70
 
     int magic = 100; //100
 
@@ -172,7 +173,7 @@ void Robot::Regulor() {
     int sen_pole = 0;
 
     int turn = 50; //otočka
-    int offset = 3200; //výchozí rychlost motoru
+    int offset = 4000; //výchozí rychlost motoru
     int offset_plus = 0;
     int PowerR = 0;
     int PowerL = 0;
@@ -229,22 +230,33 @@ void Robot::Regulor() {
         //s3_hodnota=(100-0)*((sensor[3]-MIN3)/(MAX3-MIN3));
 
         //if ((s_hodnota[0]<=25)&&(s_hodnota[1]<4)) sen_pole = 0;
-        if ((s_hodnota[0]<25)&&(s_hodnota[1]>=0)&&(s_hodnota[2]<10))
+        if (s_hodnota[1]>1){
+            if ((s_hodnota[0]<25)&&(s_hodnota[1]>=0)&&(s_hodnota[2]<10))
+            {
+                sen_pole = 32 - (s_hodnota[0]-s_hodnota[1]);
+            }
+            if ((s_hodnota[0]<10)&&(s_hodnota[1]<25)&&(s_hodnota[2]>=0))
+            {
+                sen_pole = 63 - (s_hodnota[1]-s_hodnota[2]);
+            }
+        }
+        else
         {
-            sen_pole = 32 - (s_hodnota[0]-s_hodnota[1]);
+            sen_pole = 0;
         }
-        if ((s_hodnota[0]<10)&&(s_hodnota[1]<25)&&(s_hodnota[2]>=0))
+        /*if (sen_pole >= 80)
         {
-            sen_pole = 63 - (s_hodnota[1]-s_hodnota[2]);
+            sen_pole = 80;
         }
-        else{
-            cout << "chyba" <<"\n";
-        }
+        if (sen_pole <= 15)
+        {
+            sen_pole = 15;
+        }*/
         //if ((s_hodnota[2]<=25)&&(s_hodnota[1]<4)) sen_pole = 100;
 
 
         //regulace
-        error = offsetS - s_hodnota[1];
+        error = offsetS - sen_pole;
         integral = integral + error;
         //derivate = error - s1_hodnota;
         derivate = error - lasterror;
@@ -311,8 +323,7 @@ void Robot::Regulor() {
                 SetSpeed(Left, 1000);
 
                 if (calib_pocet > 1){ //180 1 270 2
-                    cout << "START" << "\n";
-                    stav = 7; //3
+                    stav = 3; //3
                 }
                 else {
                     /*if ((LODO-lodo_prev)>1000){
@@ -323,7 +334,7 @@ void Robot::Regulor() {
                     if (sensor[2] > 3000){
                         rodo_prev = RODO;
                         calib_pocet = calib_pocet + 1;
-                        stav = 5;
+                        stav = 2;
                     }
                 }
                 break;
@@ -365,7 +376,7 @@ void Robot::Regulor() {
                 SetSpeed(Right, -200);
                 SetSpeed(Left, 200);
 
-                if ((s_hodnota[1]<(offsetS+3))&&(s_hodnota[1]>(offsetS-3))){
+                if ((sen_pole<(offsetS+3))&&(sen_pole>(offsetS-3))){
                     cout << "START" << "\n";
                     error = 0;
                     lasterror = 0;
