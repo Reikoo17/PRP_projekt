@@ -77,7 +77,7 @@ void Robot::Info(){
         push_message(stream.str());
         stream.str("");
 
-        for(size_t i = 0; i<3;++i) {
+        for(size_t i = 0; i<(sizeof(sensor)/sizeof(*sensor));++i) {
             stream << "SENSOR" << "," << i << std::flush;
             push_message(stream.str());
             stream.str("");
