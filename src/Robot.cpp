@@ -146,10 +146,10 @@ void Robot::Regulor() {
     file3.open("sensor2.txt",std::ios::out);
 
     //regulator
-            //
-#define Kp 10000//8710//9705 //220
-#define Ki 1.2//0.9
-#define Kd 80//70
+            //3200
+#define Kp 20000//8710//9705 //220
+#define Ki 1.1//0.9
+#define Kd 50//70
 
     int magic = 100; //100
 
@@ -173,7 +173,7 @@ void Robot::Regulor() {
     int sen_pole = 0;
 
     int turn = 50; //otočka
-    int offset = 4000; //výchozí rychlost motoru
+    int offset = 3200; //výchozí rychlost motoru
     int offset_plus = 0;
     int PowerR = 0;
     int PowerL = 0;
@@ -269,8 +269,8 @@ void Robot::Regulor() {
         switch (stav){
 
             case 0: //kalibrace senzorů
-                SetSpeed(Right, 1000);
-                SetSpeed(Left, -1000);
+                SetSpeed(Right, 2000);
+                SetSpeed(Left, -2000);
 
                 if (sensor[0] > 3000){
                     flag_calib = 1;
@@ -279,8 +279,8 @@ void Robot::Regulor() {
                 break;
 
             case 7:
-                SetSpeed(Right, 1000);
-                SetSpeed(Left, -1000);
+                SetSpeed(Right, 2000);
+                SetSpeed(Left, -2000);
 
                 file << sen_pole <<"\n";
                 file1 << s_hodnota[0] <<"\n";
@@ -304,8 +304,8 @@ void Robot::Regulor() {
                 break;
 
             case 2: //kalibrace senzorů
-                SetSpeed(Right, 1000);
-                SetSpeed(Left, -1000);
+                SetSpeed(Right, 2000);
+                SetSpeed(Left, -2000);
 
                 //cout << s1_hodnota << "\n";
                 //cout << sensor[2] << "\n";
@@ -319,8 +319,8 @@ void Robot::Regulor() {
                 }*/
                 break;
             case 1:
-                SetSpeed(Right, -1000);
-                SetSpeed(Left, 1000);
+                SetSpeed(Right, -2000);
+                SetSpeed(Left, 2000);
 
                 if (calib_pocet > 1){ //180 1 270 2
                     stav = 3; //3
@@ -334,14 +334,14 @@ void Robot::Regulor() {
                     if (sensor[2] > 3000){
                         rodo_prev = RODO;
                         calib_pocet = calib_pocet + 1;
-                        stav = 2;
+                        stav = 5;
                     }
                 }
                 break;
 
             case 4: //kalibrace senzorů
-                SetSpeed(Right, 200);
-                SetSpeed(Left, -200);
+                SetSpeed(Right, 1000);
+                SetSpeed(Left, -1000);
 
                 //cout << s1_hodnota << "\n";
                 //cout << sensor[2] << "\n";
@@ -356,8 +356,8 @@ void Robot::Regulor() {
                 break;
 
             case 5:
-                SetSpeed(Right, -200);
-                SetSpeed(Left, 200);
+                SetSpeed(Right, -1000);
+                SetSpeed(Left, 1000);
 
                 /*if ((LODO-lodo_prev)>1000){
                     rodo_prev = RODO;
@@ -373,8 +373,8 @@ void Robot::Regulor() {
 
             case 3:
                 flag_calib = 0;
-                SetSpeed(Right, -200);
-                SetSpeed(Left, 200);
+                SetSpeed(Right, -500);
+                SetSpeed(Left, 500);
 
                 if ((sen_pole<(offsetS+3))&&(sen_pole>(offsetS-3))){
                     cout << "START" << "\n";
@@ -431,11 +431,11 @@ void Robot::Regulor() {
                 }*/
 
 
-                if ((s_hodnota[0]>80)&&(s_hodnota[2]>80)&&(error < 10)){
+                /*if ((s_hodnota[0]>20)&&(s_hodnota[2]>20)&&(error < 10)){
                     cout << "CROSS" << "\n";
                     rodo_prev = RODO;
                     stav=20;
-                }
+                }*/
 
                /* if ((s0_hodnota<20)&&(s2_hodnota<20)&&(error>20)){
                     cout << "SPACE" << "\n";
@@ -454,7 +454,7 @@ void Robot::Regulor() {
                 SetSpeed(Right, offset);
                 SetSpeed(Left, offset);
 
-                if((RODO-rodo_prev)>2000){
+                if((RODO-rodo_prev)>500){
                     cout << "DONE" << "\n";
                     lasterror=0;
                     error=0;
