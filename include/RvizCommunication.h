@@ -98,6 +98,8 @@ private:
                << "  Senzor 4: " << format << iData.sensor[3] << std::endl
                << "  Senzor 5: " << format << iData.sensor[4];
 
+
+        //TODO: Opravit vizualizaci
         //for (size_t i = 0; i < (sizeof(*iData.sensor)/sizeof(iData.sensor));i++) {
         //    stream << "  Senzor "<< i+1 <<" : " << format << iData.sensor[0] << std::endl;
         //}
