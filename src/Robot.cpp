@@ -424,7 +424,7 @@ void Robot::Regulor() {
                     Error_SV[1] = error;
                     rodo_prev = RODO;
                 }
-                error_prum = Error_SV[1]-Error_SV[20];
+                error_prum = (Error_SV[1]+Error_SV[2]+Error_SV[3]+Error_SV[4]+Error_SV[5]+Error_SV[6]+Error_SV[7]+Error_SV[8]+Error_SV[9]+Error_SV[10])/10;
                 power_prum = PowerR - PowerL;
 
                 if ((s_hodnota[4]>15)&&(s_hodnota[3]>15)&&(error < 10)){
@@ -443,7 +443,7 @@ void Robot::Regulor() {
                 }
 
                if((error_prum<100)&&(error_prum>-100)&&(RODO>10000)){
-                    //cout << "error_prum: " << error_prum << "\n";
+                    cout << "error_prum: " << error_prum << "\n";
 
                     if((error_prum<1)&&(error_prum>-1)&&(power_prum>-100)&&(power_prum<100))
                     {
@@ -451,7 +451,7 @@ void Robot::Regulor() {
                         rodo_prev = RODO;
                         stav = 60;
                     }
-                    if(((error_prum>23)||(error_prum<-23)))
+                    if(((error_prum>=22)||(error_prum<=-22)))
                     {
                         cout << "SLOW" << "\n";
                         rodo_prev = RODO;
@@ -516,7 +516,7 @@ void Robot::Regulor() {
                 SetSpeed(Right, (offset+offset_plus)-turn);
                 SetSpeed(Left, (offset+offset_plus)+turn);
 
-                if ((s_hodnota[4]>12)||(s_hodnota[3]>12)){
+                if ((s_hodnota[4]>20)||(s_hodnota[3]>20)){
                     cout << "DONE" << "\n";
                     offset_plus = 0;
                     rodo_prev = RODO;
@@ -550,7 +550,7 @@ void Robot::Regulor() {
                 SetSpeed(Right, (offset-offset_plus)-turn);
                 SetSpeed(Left, (offset-offset_plus)+turn);
 
-                if((RODO-rodo_prev)>350){
+                if((RODO-rodo_prev)>400){
                     for (int j = 20; j > 1; --j) {
                         Error_SV[j] = Error_SV[j-1];
                     }
@@ -567,6 +567,12 @@ void Robot::Regulor() {
                     rodo_prev = RODO;
                     stav=10;
                 }
+
+                break;
+
+            case 100:
+                SetSpeed(Right, 0);
+                SetSpeed(Left, 0);
 
                 break;
         }
