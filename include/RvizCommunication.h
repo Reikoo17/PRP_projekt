@@ -91,12 +91,13 @@ private:
         // Text
         std::stringstream stream;
         stream << "  R_speed " << format << iData.RSPEED << std::endl
-               << "  L_speed " << format << iData.LSPEED << std::endl
-               << "  Senzor 1: " << format << iData.sensor[0] << std::endl
-               << "  Senzor 2: " << format << iData.sensor[1] << std::endl
-               << "  Senzor 3: " << format << iData.sensor[2] << std::endl
-               << "  Senzor 4: " << format << iData.sensor[3] << std::endl
-               << "  Senzor 5: " << format << iData.sensor[4];
+               << "  L_speed " << format << iData.LSPEED << std::endl;
+
+        for (size_t i = 0; i < (sizeof(*iData.sensor)/sizeof(iData.sensor));i++) {
+            stream << "  Senzor "<< i+1 <<" : " << format << iData.sensor[0] << std::endl;
+        }
+
+
         text.text = stream.str();
 
         // Color
