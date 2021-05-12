@@ -140,16 +140,16 @@ void Robot::Regulor() {
     std::fstream file1;
     std::fstream file2;
     std::fstream file3;
-    file.open("sen_pole.txt",std::ios::out);
-    file1.open("sensor0.txt",std::ios::out);
-    file2.open("sensor1.txt",std::ios::out);
-    file3.open("sensor2.txt",std::ios::out);
+    file.open("sen_pole1.txt",std::ios::out);
+    file1.open("sensor01.txt",std::ios::out);
+    file2.open("sensor11.txt",std::ios::out);
+    file3.open("sensor21.txt",std::ios::out);
 
     //regulator
             //3200
-#define Kp 20000//8710//9705 //220
-#define Ki 1.1//0.9
-#define Kd 50//70
+#define Kp 17900//8710//9705 //220
+#define Ki 1.25//0.9
+#define Kd 20//70
 
     int magic = 100; //100
 
@@ -169,7 +169,9 @@ void Robot::Regulor() {
     int MAX2=0;
     int MIN3=100;
     int MAX3=0;
-    int s_hodnota[3] = {0,0,0};
+    int MIN4=100;
+    int MAX4=0;
+    int s_hodnota[5] = {0,0,0,0,0};
     int sen_pole = 0;
 
     int turn = 50; //otočka
@@ -222,23 +224,37 @@ void Robot::Regulor() {
 
             if(MIN3>=sensor[3])
                 MIN3=sensor[3];
+
+            if(MAX4<=sensor[4])
+                MAX4=sensor[4];
+
+            if(MIN4>=sensor[4])
+                MIN4=sensor[4];
         }
 
-        s_hodnota[0]=(25-0)*((sensor[0]-MIN0)/(MAX0-MIN0));
+        /*s_hodnota[0]=(25-0)*((sensor[0]-MIN0)/(MAX0-MIN0));
         s_hodnota[1]=(25-0)*((sensor[1]-MIN1)/(MAX1-MIN1));
         s_hodnota[2]=(25-0)*((sensor[2]-MIN2)/(MAX2-MIN2));
+        s_hodnota[3]=(25-0)*((sensor[3]-MIN3)/(MAX3-MIN3));
+        s_hodnota[4]=(25-0)*((sensor[4]-MIN4)/(MAX2-MIN4));*/
+        s_hodnota[0]=(50-0)*((sensor[0]-MIN0)/(MAX0-MIN0));
+        s_hodnota[1]=(50-0)*((sensor[1]-MIN1)/(MAX1-MIN1));
+        s_hodnota[2]=(50-0)*((sensor[2]-MIN2)/(MAX2-MIN2));
+        s_hodnota[3]=(25-0)*((sensor[3]-MIN3)/(MAX3-MIN3));
+        s_hodnota[4]=(25-0)*((sensor[4]-MIN4)/(MAX2-MIN4));
         //s3_hodnota=(100-0)*((sensor[3]-MIN3)/(MAX3-MIN3));
 
         //if ((s_hodnota[0]<=25)&&(s_hodnota[1]<4)) sen_pole = 0;
-        if (s_hodnota[1]>1){
-            if ((s_hodnota[0]<25)&&(s_hodnota[1]>=0)&&(s_hodnota[2]<10))
+        if (s_hodnota[1]>5){
+            /*if ((s_hodnota[0]<25)&&(s_hodnota[1]>=0)&&(s_hodnota[2]<10))
             {
-                sen_pole = 32 - (s_hodnota[0]-s_hodnota[1]);
+                sen_pole = 35 - (s_hodnota[0]-s_hodnota[1]);
             }
             if ((s_hodnota[0]<10)&&(s_hodnota[1]<25)&&(s_hodnota[2]>=0))
             {
                 sen_pole = 63 - (s_hodnota[1]-s_hodnota[2]);
-            }
+            }*/
+            sen_pole = 50 - (s_hodnota[0]-s_hodnota[2]);
         }
         else
         {
@@ -269,8 +285,8 @@ void Robot::Regulor() {
         switch (stav){
 
             case 0: //kalibrace senzorů
-                SetSpeed(Right, 2000);
-                SetSpeed(Left, -2000);
+                SetSpeed(Right, 1000);
+                SetSpeed(Left, -1000);
 
                 if (sensor[0] > 3000){
                     flag_calib = 1;
@@ -279,8 +295,8 @@ void Robot::Regulor() {
                 break;
 
             case 7:
-                SetSpeed(Right, 2000);
-                SetSpeed(Left, -2000);
+                SetSpeed(Right, 1000);
+                SetSpeed(Left, -1000);
 
                 file << sen_pole <<"\n";
                 file1 << s_hodnota[0] <<"\n";
@@ -304,8 +320,8 @@ void Robot::Regulor() {
                 break;
 
             case 2: //kalibrace senzorů
-                SetSpeed(Right, 2000);
-                SetSpeed(Left, -2000);
+                SetSpeed(Right, 1000);
+                SetSpeed(Left, -1000);
 
                 //cout << s1_hodnota << "\n";
                 //cout << sensor[2] << "\n";
@@ -319,8 +335,8 @@ void Robot::Regulor() {
                 }*/
                 break;
             case 1:
-                SetSpeed(Right, -2000);
-                SetSpeed(Left, 2000);
+                SetSpeed(Right, -1000);
+                SetSpeed(Left, 1000);
 
                 if (calib_pocet > 1){ //180 1 270 2
                     stav = 3; //3
@@ -431,20 +447,20 @@ void Robot::Regulor() {
                 }*/
 
 
-                /*if ((s_hodnota[0]>20)&&(s_hodnota[2]>20)&&(error < 10)){
+                if ((s_hodnota[4]>15)&&(s_hodnota[3]>15)&&(error < 10)){
                     cout << "CROSS" << "\n";
                     rodo_prev = RODO;
                     stav=20;
-                }*/
+                }
 
-               /* if ((s0_hodnota<20)&&(s2_hodnota<20)&&(error>20)){
+               if ((s_hodnota[3]<5)&&(s_hodnota[4]<5)&&(error>15)){
                     cout << "SPACE" << "\n";
                     rodo_prev = RODO;
                     PowerR_Save = (PowerR_SV[20]+PowerR_SV[19]+PowerR_SV[18]+PowerR_SV[17]+PowerR_SV[16]+PowerR_SV[15]+PowerR_SV[14]+PowerR_SV[13]+PowerR_SV[12]+PowerR_SV[11])/10;
                     PowerL_Save = (PowerR_SV[20]+PowerL_SV[19]+PowerL_SV[18]+PowerL_SV[17]+PowerL_SV[16]+PowerL_SV[15]+PowerL_SV[14]+PowerL_SV[13]+PowerL_SV[12]+PowerL_SV[11])/10;
 
                     stav=50;
-                }*/
+                }
 
                 break;
 
@@ -454,7 +470,7 @@ void Robot::Regulor() {
                 SetSpeed(Right, offset);
                 SetSpeed(Left, offset);
 
-                if((RODO-rodo_prev)>500){
+                if((RODO-rodo_prev)>2000){
                     cout << "DONE" << "\n";
                     lasterror=0;
                     error=0;
@@ -465,28 +481,28 @@ void Robot::Regulor() {
                 break;
 
                 //SPACE
-           /* case 50:
-                if(s0_hodnota>70)
+           case 50:
+                if(s_hodnota[3]>10)
                 {
-                    PowerR_Save = PowerR_Save - 10;
+                    PowerR_Save = PowerR_Save - 5;
                 }
-                if(s2_hodnota>70)
+                if(s_hodnota[4]>10)
                 {
-                    PowerL_Save = PowerL_Save - 10;
+                    PowerL_Save = PowerL_Save - 5;
                 }
 
                 SetSpeed(Left, PowerL_Save);
                 SetSpeed(Right, PowerR_Save);
-                if (((s0_hodnota>18)&&(s2_hodnota>18))&&(s1_hodnota>45)&&(s1_hodnota<55)){
-                    lasterror=0;
-                    error=0;
+                if (((sen_pole-offsetS)>-2)&&((sen_pole-offsetS)<2)){
+                    //lasterror=0;
+                    //error=0;
                     stav = 10;
                     rodo_prev = RODO;
                     cout << "DONE" << "\n";
                 }
                 break;
 
-                //ACC
+            /*    //ACC
             case 60:
                 //magic = 200;
                 if((RODO-rodo_prev)>50){
