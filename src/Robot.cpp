@@ -149,7 +149,7 @@ void Robot::Regulor() {
             //3200
 #define Kp 8700//8700
 #define Ki 6//6
-#define Kd 1100//1100
+#define Kd 1200//1100
 
     int magic = 100; //100
 
@@ -462,7 +462,7 @@ void Robot::Regulor() {
                     stav=50;
                 }
 
-               if ((s_hodnota[3]>5)&&(s_hodnota[4]>5)&&(s_hodnota[5]<5)){
+               if ((s_hodnota[3]>10)&&(s_hodnota[4]>10)&&(s_hodnota[5]<5)){
                     cout << "ODBOCKA" << "\n";
                     rodo_prev = RODO;
                     stav=90;
@@ -477,7 +477,7 @@ void Robot::Regulor() {
                         rodo_prev = RODO;
                         stav = 60;
                     }
-                    if(((error_prum>=20)||(error_prum<=-20)))
+                    if(((error_prum>=22)||(error_prum<=-22)))
                     {
                         cout << "SLOW" << "\n";
                         rodo_prev = RODO;
@@ -531,12 +531,12 @@ void Robot::Regulor() {
             case 60:
                 //magic = 200;
                 if((RODO-rodo_prev)>50){
-                    if(offset_plus>1300)
+                    if(offset_plus>1700)
                     {
-                        offset_plus = 1300;
+                        offset_plus = 1700;
                     }
                     else {
-                        offset_plus = offset_plus + 10;
+                        offset_plus = offset_plus + 50;
                     }
                     //cout << "offset_plus: " << offset_plus << "\n";
                     for (int j = 20; j > 1; --j) {
@@ -551,7 +551,7 @@ void Robot::Regulor() {
                 SetSpeed(Right, (offset+offset_plus)-turn);
                 SetSpeed(Left, (offset+offset_plus)+turn);
 
-                if ((s_hodnota[4]>10)||(s_hodnota[3]>10)){
+                if (s_hodnota[5]<7){
                     cout << "DONE" << "\n";
                     offset_plus = 0;
                     rodo_prev = RODO;
@@ -580,7 +580,7 @@ void Robot::Regulor() {
                     offset_plus = 1000;
                 }*/
 
-                offset_plus = 1800;
+                offset_plus = 2200;
 
                 SetSpeed(Right, (offset-offset_plus)-turn);
                 SetSpeed(Left, (offset-offset_plus)+turn);
@@ -600,16 +600,18 @@ void Robot::Regulor() {
 
                 //cout << error_prum << "\n";
 
-                if ((s_hodnota[3]<5)&&(s_hodnota[4]<5)&&(error>20)){
+                /*if ((s_hodnota[3]<5)&&(s_hodnota[4]<5)&&(error>20)){
                     cout << "SPACE" << "\n";
                     rodo_prev = RODO;
                     PowerR_Save = (PowerR_SV[20]+PowerR_SV[19]+PowerR_SV[18]+PowerR_SV[17]+PowerR_SV[16]+PowerR_SV[15]+PowerR_SV[14]+PowerR_SV[13]+PowerR_SV[12]+PowerR_SV[11])/10;
                     PowerL_Save = (PowerR_SV[20]+PowerL_SV[19]+PowerL_SV[18]+PowerL_SV[17]+PowerL_SV[16]+PowerL_SV[15]+PowerL_SV[14]+PowerL_SV[13]+PowerL_SV[12]+PowerL_SV[11])/10;
 
                     stav=50;
-                }
+                }*/
 
-                if (error_prum==0){
+                
+
+                if (((s_hodnota[5]>15)||(error_prum==0))&&(abs(PowerR_SV[1]-PowerL_SV[1])<200)){
                     cout << "DONE" << "\n";
                     offset_plus = 0;
                     rodo_prev = RODO;
