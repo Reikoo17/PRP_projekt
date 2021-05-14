@@ -46,7 +46,7 @@ private:
     float in_step;
     float in_ustep;
 
-    float sensor[5]{};
+    float sensor[6]{};
     int LODO = 0;
     int RODO = 0;
 
