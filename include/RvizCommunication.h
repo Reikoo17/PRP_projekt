@@ -96,7 +96,7 @@ private:
                << "  Senzor 2: " << format << iData.sensor[1] << std::endl
                << "  Senzor 3: " << format << iData.sensor[2] << std::endl
                << "  Senzor 4: " << format << iData.sensor[3] << std::endl
-               << "  Senzor 5: " << format << iData.sensor[4];
+               << "  Senzor 7: " << format << iData.sensor[4];
 
 
         //TODO: Opravit vizualizaci

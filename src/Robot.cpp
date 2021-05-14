@@ -147,9 +147,9 @@ void Robot::Regulor() {
 
     //regulator
             //3200
-#define Kp 9000//8710//9705 //220
-#define Ki 1.4//0.9
-#define Kd 1200//27//70
+#define Kp 8700//8700
+#define Ki 6//6
+#define Kd 1100//1100
 
     int magic = 100; //100
 
@@ -171,11 +171,15 @@ void Robot::Regulor() {
     int MAX3=0;
     int MIN4=100;
     int MAX4=0;
+    /*int MIN5=100;
+    int MAX5=0;
+    int MIN6=100;
+    int MAX6=0;*/
     int s_hodnota[5] = {0,0,0,0,0};
     int sen_pole = 0;
 
     int turn = 50; //otočka
-    int offset = 3200; //výchozí rychlost motoru
+    int offset = 3300; //výchozí rychlost motoru
     int offset_plus = 0;
     int PowerR = 0;
     int PowerL = 0;
@@ -189,6 +193,8 @@ void Robot::Regulor() {
     int PowerR_Save = 0;
     int PowerL_Save = 0;
     int i;
+    int h = 0;
+    bool odbocka[5]={1,1,0,1,1};
 
     bool flag_calib = 1;
     int calib_pocet = 0;
@@ -230,6 +236,18 @@ void Robot::Regulor() {
 
             if(MIN4>=sensor[4])
                 MIN4=sensor[4];
+
+            /*if(MAX5<=sensor[5])
+                MAX5=sensor[5];
+
+            if(MIN5>=sensor[5])
+                MIN5=sensor[5];
+
+            if(MAX6<=sensor[6])
+                MAX6=sensor[6];
+
+            if(MIN6>=sensor[6])
+                MIN6=sensor[6];*/
         }
 
         /*s_hodnota[0]=(25-0)*((sensor[0]-MIN0)/(MAX0-MIN0));
@@ -241,7 +259,9 @@ void Robot::Regulor() {
         s_hodnota[1]=(50-0)*((sensor[1]-MIN1)/(MAX1-MIN1));
         s_hodnota[2]=(50-0)*((sensor[2]-MIN2)/(MAX2-MIN2));
         s_hodnota[3]=(25-0)*((sensor[3]-MIN3)/(MAX3-MIN3));
-        s_hodnota[4]=(25-0)*((sensor[4]-MIN4)/(MAX2-MIN4));
+        s_hodnota[4]=(25-0)*((sensor[4]-MIN4)/(MAX4-MIN4));
+        /*s_hodnota[5]=(25-0)*((sensor[5]-MIN5)/(MAX5-MIN5));
+        s_hodnota[6]=(25-0)*((sensor[6]-MIN6)/(MAX6-MIN6));*/
         //s3_hodnota=(100-0)*((sensor[3]-MIN3)/(MAX3-MIN3));
 
         //if ((s_hodnota[0]<=25)&&(s_hodnota[1]<4)) sen_pole = 0;
@@ -427,7 +447,7 @@ void Robot::Regulor() {
                 error_prum = (Error_SV[1]+Error_SV[2]+Error_SV[3]+Error_SV[4]+Error_SV[5]+Error_SV[6]+Error_SV[7]+Error_SV[8]+Error_SV[9]+Error_SV[10])/10;
                 power_prum = PowerR - PowerL;
 
-                if ((s_hodnota[4]>15)&&(s_hodnota[3]>15)&&(error < 10)){
+                if ((s_hodnota[4]>15)&&(s_hodnota[3]>15)&&(s_hodnota[1] > 30)){
                     cout << "CROSS" << "\n";
                     rodo_prev = RODO;
                     stav=20;
@@ -436,16 +456,22 @@ void Robot::Regulor() {
                 if ((s_hodnota[3]<5)&&(s_hodnota[4]<5)&&(error>20)){
                     cout << "SPACE" << "\n";
                     rodo_prev = RODO;
-                    PowerR_Save = (PowerR_SV[20]+PowerR_SV[19]+PowerR_SV[18]+PowerR_SV[17]+PowerR_SV[16]+PowerR_SV[15]+PowerR_SV[14]+PowerR_SV[13]+PowerR_SV[12]+PowerR_SV[11])/10;
-                    PowerL_Save = (PowerR_SV[20]+PowerL_SV[19]+PowerL_SV[18]+PowerL_SV[17]+PowerL_SV[16]+PowerL_SV[15]+PowerL_SV[14]+PowerL_SV[13]+PowerL_SV[12]+PowerL_SV[11])/10;
+                    PowerR_Save = (PowerR_SV[15]+PowerR_SV[14]+PowerR_SV[13]+PowerR_SV[12]+PowerR_SV[11]+PowerR_SV[10]+PowerR_SV[9]+PowerR_SV[8]+PowerR_SV[7]+PowerR_SV[6])/10;
+                    PowerL_Save = (PowerR_SV[15]+PowerL_SV[14]+PowerL_SV[13]+PowerL_SV[12]+PowerL_SV[11]+PowerL_SV[10]+PowerL_SV[9]+PowerL_SV[8]+PowerL_SV[7]+PowerL_SV[6])/10;
 
                     stav=50;
                 }
 
-               if((error_prum<100)&&(error_prum>-100)&&(RODO>10000)){
-                    cout << "error_prum: " << error_prum << "\n";
+               if (error==50){
+                    cout << "ODBOCKA" << "\n";
+                    rodo_prev = RODO;
+                    stav=90;
+                }
 
-                    if((error_prum<1)&&(error_prum>-1)&&(power_prum>-100)&&(power_prum<100))
+               if((error_prum<100)&&(error_prum>-100)&&(RODO>10000)){
+                    //cout << "error_prum: " << error_prum << "\n";
+
+                   if((error_prum==0)&&(power_prum>-100)&&(power_prum<100))
                     {
                         cout << "ACC" << "\n";
                         rodo_prev = RODO;
@@ -464,8 +490,8 @@ void Robot::Regulor() {
                 //CROSS
             case 20:
 
-                SetSpeed(Right, offset);
-                SetSpeed(Left, offset);
+                SetSpeed(Right, offset+500);
+                SetSpeed(Left, offset+500);
 
                 if((RODO-rodo_prev)>2000){
                     cout << "DONE" << "\n";
@@ -481,11 +507,13 @@ void Robot::Regulor() {
            case 50:
                 if(s_hodnota[3]>10)
                 {
-                    PowerR_Save = PowerR_Save - 5;
+                    PowerR_Save = PowerR_Save - 10;
+                    PowerL_Save = PowerL_Save + 2;
                 }
                 if(s_hodnota[4]>10)
                 {
-                    PowerL_Save = PowerL_Save - 5;
+                    PowerR_Save = PowerR_Save + 2;
+                    PowerL_Save = PowerL_Save - 10;
                 }
 
                 SetSpeed(Left, PowerL_Save);
@@ -503,26 +531,33 @@ void Robot::Regulor() {
             case 60:
                 //magic = 200;
                 if((RODO-rodo_prev)>50){
-                    offset_plus = offset_plus + 10;
+                    if(offset_plus>1300)
+                    {
+                        offset_plus = 1300;
+                    }
+                    else {
+                        offset_plus = offset_plus + 10;
+                    }
                     //cout << "offset_plus: " << offset_plus << "\n";
-                    rodo_prev=RODO;
-                }
-
-                if(offset_plus>1500)
-                {
-                    offset_plus = 1500;
+                    for (int j = 20; j > 1; --j) {
+                        PowerR_SV[j] = PowerR_SV[j-1];
+                        PowerL_SV[j] = PowerL_SV[j-1];
+                    }
+                    PowerR_SV[1] = (offset+offset_plus)-turn;
+                    PowerL_SV[1] = (offset+offset_plus)+turn;
+                    rodo_prev = RODO;
                 }
 
                 SetSpeed(Right, (offset+offset_plus)-turn);
                 SetSpeed(Left, (offset+offset_plus)+turn);
 
-                if ((s_hodnota[4]>20)||(s_hodnota[3]>20)){
+                if ((s_hodnota[4]>10)||(s_hodnota[3]>10)){
                     cout << "DONE" << "\n";
                     offset_plus = 0;
                     rodo_prev = RODO;
                     stav=10;
                 }
-                if ((s_hodnota[3]<5)&&(s_hodnota[4]<5)&&(error>25)){
+                if ((s_hodnota[3]<5)&&(s_hodnota[4]<5)&&(s_hodnota[1]<20)){
                     cout << "SPACE" << "\n";
                     rodo_prev = RODO;
                     PowerR_Save = (PowerR_SV[20]+PowerR_SV[19]+PowerR_SV[18]+PowerR_SV[17]+PowerR_SV[16]+PowerR_SV[15]+PowerR_SV[14]+PowerR_SV[13]+PowerR_SV[12]+PowerR_SV[11])/10;
@@ -545,21 +580,34 @@ void Robot::Regulor() {
                     offset_plus = 1000;
                 }*/
 
-                offset_plus = 1500;
+                offset_plus = 1800;
 
                 SetSpeed(Right, (offset-offset_plus)-turn);
                 SetSpeed(Left, (offset-offset_plus)+turn);
 
-                if((RODO-rodo_prev)>400){
+                if((RODO-rodo_prev)>550){
                     for (int j = 20; j > 1; --j) {
+                        PowerR_SV[j] = PowerR_SV[j-1];
+                        PowerL_SV[j] = PowerL_SV[j-1];
                         Error_SV[j] = Error_SV[j-1];
                     }
+                    PowerR_SV[1] = (offset-offset_plus)-turn;
+                    PowerL_SV[1] = (offset-offset_plus)+turn;
                     Error_SV[1] = error;
                     rodo_prev = RODO;
                 }
                 error_prum = (Error_SV[1]+Error_SV[2]+Error_SV[3]+Error_SV[4]+Error_SV[5]+Error_SV[6]+Error_SV[7]+Error_SV[8]+Error_SV[9]+Error_SV[10]+Error_SV[11]+Error_SV[12]+Error_SV[13]+Error_SV[14]+Error_SV[15]+Error_SV[16]+Error_SV[17]+Error_SV[18]+Error_SV[19]+Error_SV[20])/20;
 
                 //cout << error_prum << "\n";
+
+                if ((s_hodnota[3]<5)&&(s_hodnota[4]<5)&&(error>20)){
+                    cout << "SPACE" << "\n";
+                    rodo_prev = RODO;
+                    PowerR_Save = (PowerR_SV[20]+PowerR_SV[19]+PowerR_SV[18]+PowerR_SV[17]+PowerR_SV[16]+PowerR_SV[15]+PowerR_SV[14]+PowerR_SV[13]+PowerR_SV[12]+PowerR_SV[11])/10;
+                    PowerL_Save = (PowerR_SV[20]+PowerL_SV[19]+PowerL_SV[18]+PowerL_SV[17]+PowerL_SV[16]+PowerL_SV[15]+PowerL_SV[14]+PowerL_SV[13]+PowerL_SV[12]+PowerL_SV[11])/10;
+
+                    stav=50;
+                }
 
                 if (error_prum==0){
                     cout << "DONE" << "\n";
@@ -570,9 +618,17 @@ void Robot::Regulor() {
 
                 break;
 
-            case 100:
+
+            case 90:
+
+
                 SetSpeed(Right, 0);
                 SetSpeed(Left, 0);
+
+                if ((s_hodnota[3]>10)){
+                    h++;
+                    stav = 10;
+                }
 
                 break;
         }
