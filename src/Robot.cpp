@@ -194,7 +194,7 @@ void Robot::Regulor() {
     int PowerL_Save = 0;
     int i;
     int h = 0;
-    bool odbocka[5]={1,1,0,1,1};
+    bool odbocka[6]={0,1,1,1,0,1};
 
     bool flag_calib = 1;
     int calib_pocet = 0;
@@ -206,7 +206,8 @@ void Robot::Regulor() {
 
 
     while(thread_regulace) {
-        //sensory
+
+            //sensory
         if(flag_calib){
             if(MAX1<=sensor[1])
                 MAX1=sensor[1];
@@ -305,8 +306,8 @@ void Robot::Regulor() {
         switch (stav){
 
             case 0: //kalibrace senzorů
-                SetSpeed(Right, 1000);
-                SetSpeed(Left, -1000);
+                SetSpeed(Right, 1500);
+                SetSpeed(Left, -1500);
 
                 if (sensor[0] > 3000){
                     flag_calib = 1;
@@ -315,8 +316,8 @@ void Robot::Regulor() {
                 break;
 
             case 7:
-                SetSpeed(Right, 1000);
-                SetSpeed(Left, -1000);
+                SetSpeed(Right, 1500);
+                SetSpeed(Left, -1500);
 
                 file << sen_pole <<"\n";
                 file1 << s_hodnota[0] <<"\n";
@@ -340,8 +341,8 @@ void Robot::Regulor() {
                 break;
 
             case 2: //kalibrace senzorů
-                SetSpeed(Right, 1000);
-                SetSpeed(Left, -1000);
+                SetSpeed(Right, 1500);
+                SetSpeed(Left, -1500);
 
                 //cout << s1_hodnota << "\n";
                 //cout << sensor[2] << "\n";
@@ -355,8 +356,8 @@ void Robot::Regulor() {
                 }*/
                 break;
             case 1:
-                SetSpeed(Right, -1000);
-                SetSpeed(Left, 1000);
+                SetSpeed(Right, -1500);
+                SetSpeed(Left, 1500);
 
                 if (calib_pocet > 1){ //180 1 270 2
                     stav = 3; //3
@@ -376,8 +377,8 @@ void Robot::Regulor() {
                 break;
 
             case 4: //kalibrace senzorů
-                SetSpeed(Right, 1000);
-                SetSpeed(Left, -1000);
+                SetSpeed(Right, 1500);
+                SetSpeed(Left, -1500);
 
                 //cout << s1_hodnota << "\n";
                 //cout << sensor[2] << "\n";
@@ -392,8 +393,8 @@ void Robot::Regulor() {
                 break;
 
             case 5:
-                SetSpeed(Right, -1000);
-                SetSpeed(Left, 1000);
+                SetSpeed(Right, -1500);
+                SetSpeed(Left, 1500);
 
                 /*if ((LODO-lodo_prev)>1000){
                     rodo_prev = RODO;
@@ -463,9 +464,15 @@ void Robot::Regulor() {
                 }
 
                if ((s_hodnota[3]>10)&&(s_hodnota[4]>10)&&(s_hodnota[5]<5)){
-                    cout << "ODBOCKA" << "\n";
+                    cout << "ODBOCKA: "<< odbocka [h] <<  "\n";
                     rodo_prev = RODO;
-                    stav=90;
+
+                    if (odbocka[h]==0){
+                        stav=90;
+                    }
+                    else{
+                        stav=100;
+                    }
                 }
 
                if((error_prum<100)&&(error_prum>-100)&&(RODO>10000)){
@@ -518,7 +525,7 @@ void Robot::Regulor() {
 
                 SetSpeed(Left, PowerL_Save);
                 SetSpeed(Right, PowerR_Save);
-                if (((sen_pole-offsetS)>-2)&&((sen_pole-offsetS)<2)){
+                if (((sen_pole-offsetS)>-4)&&((sen_pole-offsetS)<4)){
                     //lasterror=0;
                     //error=0;
                     stav = 10;
@@ -531,9 +538,9 @@ void Robot::Regulor() {
             case 60:
                 //magic = 200;
                 if((RODO-rodo_prev)>50){
-                    if(offset_plus>1700)
+                    if(offset_plus>1500)
                     {
-                        offset_plus = 1700;
+                        offset_plus = 1500;
                     }
                     else {
                         offset_plus = offset_plus + 50;
@@ -626,6 +633,19 @@ void Robot::Regulor() {
 
                 SetSpeed(Right, -1000);
                 SetSpeed(Left, 1000);
+
+                if ((s_hodnota[5]>5)){
+                    h++;
+                    stav = 10;
+                }
+
+                break;
+
+            case 100:
+
+
+                SetSpeed(Right, 1000);
+                SetSpeed(Left, -1000);
 
                 if ((s_hodnota[5]>5)){
                     h++;
